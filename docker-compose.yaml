@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  mysql-backup:
+    image: mysql-backup-s3
+    secrets:
+      - db_super_user
+      - db_super_passwd
+    environment:
+      DB_HOST: "mariadb_maxscale"
+      DB_PORT: "6033"
+      DB_USER: "/run/secrets/db_super_user"
+      DB_PASSWORD: "/run/secrets/db_super_passwd"
+      S3_BUCKET: "s3://my-bucket/backup/database"
+      AWS_DEFAULT_REGION: "us-west-x"
+      AWS_ACCESS_KEY_ID: "ENTER_YOUR_ACCESS_KEY"
+      AWS_SECRET_ACCESS_KEY: "ENTER_YOUR_SECRET_KEY"
+      CRON_SCHEDULE: "0 */2 * * *" # Dynamic cron schedule for backup time
+      DELETE_OLDER_THAN_DAY: "5" # Delete all files in S3 older than day xx
+    volumes:
+      - ./backup:/tmp/backup/mysql
+
+secrets:
+  db_super_user:
+    external: true
+  db_super_passwd:
+    external: true
+
+networks:
+  mariadb-network:
+    external: true
