@@ -1,26 +1,39 @@
 version: "3.8"
 
 services:
-  mysql-backup:
+  mysql-backup-s3:
     image: mysql-backup-s3
     secrets:
+      - db_host
+      - db_port
       - db_super_user
       - db_super_passwd
     environment:
-      DB_HOST: "mariadb_maxscale"
-      DB_PORT: "6033"
-      DB_USER: "/run/secrets/db_super_user"
-      DB_PASSWORD: "/run/secrets/db_super_passwd"
-      S3_BUCKET: "s3://my-bucket/backup/database"
-      AWS_DEFAULT_REGION: "us-west-x"
-      AWS_ACCESS_KEY_ID: "ENTER_YOUR_ACCESS_KEY"
-      AWS_SECRET_ACCESS_KEY: "ENTER_YOUR_SECRET_KEY"
+      S3_BUCKET: "s3://my-bucket-name/backup/mysql"  # << Change me
+      ENDPOINT_URL: "https://s3.us-west-x.backblazeb2.com" # << Change me
+      AWS_DEFAULT_REGION: "us-west-x"  # << Change me
+      AWS_ACCESS_KEY_ID: "ENTER_YOUR_ACCESS_KEY"  # << Change me
+      AWS_SECRET_ACCESS_KEY: "ENTER_YOUR_SECRET_KEY"  # << Change me
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_super_user"
+      DB_PASS_FILE: "/run/secrets/db_super_passwd"
       CRON_SCHEDULE: "0 */2 * * *" # Dynamic cron schedule for backup time
       DELETE_OLDER_THAN_DAY: "5" # Delete all files in S3 older than day xx
+      ENCRYPTION_SOURCE: "/data/mariadb/encryption" # Encryption path
+      ENABLE_SSL: "false"  # Set to true or false
     volumes:
+#      - /data/mariadb/tls:/etc/my.cnf.d/tls # Uncomment if ENABLE_SSL: true >> Change with your ssl/tls location path
+      - /data/mariadb/encryption:/data/mariadb/encryption # Encryption path
       - ./backup:/tmp/backup/mysql
+    networks:
+      - mariadb-network
 
 secrets:
+  db_host:
+    external: true
+  db_port:
+    external: true
   db_super_user:
     external: true
   db_super_passwd:
